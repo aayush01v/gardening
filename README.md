@@ -75,7 +75,3 @@ The form currently logs to console. To connect to a backend:
 ├── script.js           # JavaScript functionality
 └── README.md           # This file
 ```
-
-## License
-
-Free to use for educational and commercial purposes.
