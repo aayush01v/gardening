@@ -3,6 +3,7 @@ const navToggle = document.querySelector('.nav-toggle');
 const navMenu = document.querySelector('.nav-menu');
 const navbar = document.querySelector('.navbar');
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sectionLinks = document.querySelectorAll('.nav-menu a[href^="#"]');
 
 if (navToggle && navMenu) {
     navToggle.addEventListener('click', () => {
@@ -22,6 +23,21 @@ if (navToggle && navMenu) {
         }
     });
 }
+
+// Close menu when clicking outside on mobile
+document.addEventListener('click', (event) => {
+    if (!navMenu || !navToggle) return;
+
+    const clickedInsideMenu = navMenu.contains(event.target);
+    const clickedToggle = navToggle.contains(event.target);
+
+    if (navMenu.classList.contains('active') && !clickedInsideMenu && !clickedToggle) {
+        navMenu.classList.remove('active');
+        navToggle.classList.remove('active');
+        navToggle.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
+});
 
 // Close mobile menu when clicking on a link
 document.querySelectorAll('.nav-menu a').forEach(link => {
@@ -78,49 +94,78 @@ const onScroll = () => {
 
 window.addEventListener('scroll', onScroll, { passive: true });
 
+// Active section highlighting for navigation
+const activeLinkObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+
+        const sectionId = entry.target.getAttribute('id');
+        sectionLinks.forEach((link) => {
+            const isMatch = link.getAttribute('href') === `#${sectionId}`;
+            link.classList.toggle('active-link', isMatch);
+            if (isMatch) {
+                link.setAttribute('aria-current', 'page');
+            } else {
+                link.removeAttribute('aria-current');
+            }
+        });
+    });
+}, { rootMargin: '-45% 0px -45% 0px', threshold: 0.01 });
+
+document.querySelectorAll('section[id]').forEach((section) => {
+    activeLinkObserver.observe(section);
+});
+
 // Contact Form Handling
 const contactForm = document.getElementById('contactForm');
 const formMessage = document.getElementById('formMessage');
-const submitButton = contactForm.querySelector('button[type="submit"]');
+const submitButton = contactForm ? contactForm.querySelector('button[type="submit"]') : null;
 
-contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+if (contactForm && formMessage && submitButton) {
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
 
-    // Add loading state
-    submitButton.classList.add('loading');
-    submitButton.disabled = true;
+        formMessage.style.display = '';
 
-    // Get form data
-    const formData = new FormData(contactForm);
-    const data = Object.fromEntries(formData);
+        // Add loading state
+        submitButton.classList.add('loading');
+        submitButton.disabled = true;
 
-    // Simulate form submission (replace with actual backend endpoint)
-    setTimeout(() => {
-        console.log('Form submitted:', data);
+        // Get form data
+        const formData = new FormData(contactForm);
+        const data = Object.fromEntries(formData);
 
-        // Remove loading state
-        submitButton.classList.remove('loading');
-        submitButton.disabled = false;
-
-        // Show success message
-        formMessage.textContent = 'Thank you! We\'ll contact you within 24 hours with your free quote.';
-        formMessage.className = 'form-message success';
-
-        // Reset form
-        contactForm.reset();
-
-        // Hide message after 5 seconds
+        // Simulate form submission (replace with actual backend endpoint)
         setTimeout(() => {
-            formMessage.style.display = 'none';
-        }, 5000);
-    }, 1500);
-});
+            console.log('Form submitted:', data);
+
+            // Remove loading state
+            submitButton.classList.remove('loading');
+            submitButton.disabled = false;
+
+            // Show success message
+            formMessage.textContent = 'Thank you! We\'ll contact you within 24 hours with your free quote.';
+            formMessage.className = 'form-message success';
+
+            // Reset form
+            contactForm.reset();
+
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                formMessage.style.display = 'none';
+            }, 5000);
+        }, 1500);
+    });
+}
 
 // Smooth scroll for anchor links (backup for browsers without CSS scroll-behavior)
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (!href || href === '#') return;
+
         e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
+        const target = document.querySelector(href);
         if (target) {
             target.scrollIntoView({
                 behavior: prefersReducedMotion ? 'auto' : 'smooth',
