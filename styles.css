@@ -41,7 +41,14 @@
     --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
     --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
     --shadow-xl: 0 16px 48px rgba(0,0,0,0.2);
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  gap 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -243,8 +250,20 @@ h3 {
     top: 0;
     z-index: 1000;
     padding: 1.2rem 0;
-    transition: var(--transition);
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                backdrop-filter 0.3s ease;
     border-bottom: 1px solid rgba(0,0,0,0.05);
+    will-change: padding;
+}
+
+/* Scrolled state toggled via JS classList — no inline style mutations */
+.navbar.scrolled {
+    padding: 0.8rem 0;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.98);
 }
 
 .navbar .container {
@@ -345,7 +364,8 @@ h3 {
                 url('https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1920&h=1080&fit=crop');
     background-size: cover;
     background-position: center;
-    background-attachment: fixed;
+    background-attachment: scroll;
+    will-change: background-position;
     color: var(--pure-white);
     text-align: center;
     overflow: hidden;
@@ -361,6 +381,7 @@ h3 {
     bottom: 0;
     background: radial-gradient(circle at 30% 50%, rgba(107, 159, 62, 0.2) 0%, transparent 50%);
     animation: pulse 8s ease-in-out infinite;
+    will-change: opacity;
 }
 
 @keyframes pulse {
@@ -406,12 +427,22 @@ h3 {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.25);
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.25);
     border-radius: 50px;
     font-size: 14px;
     font-weight: 700;
     margin-bottom: 2rem;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
     animation: fadeInUp 1s ease-out 0.2s both, float 3s ease-in-out infinite;
+    will-change: transform;
 }
 
 @keyframes float {
@@ -1129,7 +1160,7 @@ h3 {
         url('https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=1920&h=600&fit=crop');
     background-size: cover;
     background-position: center;
-    background-attachment: fixed;
+    background-attachment: scroll;
     color: var(--pure-white);
     text-align: center;
     position: relative;
@@ -1148,6 +1179,7 @@ h3 {
     border-radius: 50%;
     animation: orbFloat 15s ease-in-out infinite;
     filter: blur(40px);
+    will-change: transform;
 }
 
 .footer-cta::after {
@@ -1161,6 +1193,7 @@ h3 {
     border-radius: 50%;
     animation: orbFloat 20s ease-in-out infinite reverse;
     filter: blur(40px);
+    will-change: transform;
 }
 
 /* Geometric pattern overlay */
@@ -1495,6 +1528,56 @@ a:focus, button:focus, input:focus, select:focus, textarea:focus {
     outline-offset: 3px;
 }
 
+/* ===================================
+   SCROLL REVEAL — GPU-COMPOSITED
+   Initial state set in CSS (not inline JS),
+   .is-visible toggled by IntersectionObserver
+   =================================== */
+.service-card,
+.testimonial-card,
+.about-content,
+.about-image,
+.contact-info,
+.contact-form-wrapper {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity, transform;
+}
+
+.service-card.is-visible,
+.testimonial-card.is-visible,
+.about-content.is-visible,
+.about-image.is-visible,
+.contact-info.is-visible,
+.contact-form-wrapper.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    will-change: auto; /* release hint once done */
+}
+
+/* Staggered entry for grid children */
+.service-card:nth-child(2) { transition-delay: 0.1s; }
+.service-card:nth-child(3) { transition-delay: 0.2s; }
+.service-card:nth-child(4) { transition-delay: 0.3s; }
+
+.testimonial-card:nth-child(2) { transition-delay: 0.1s; }
+.testimonial-card:nth-child(3) { transition-delay: 0.2s; }
+
+/* Form validation states — class-based (no inline style mutations) */
+.form-group input.is-valid,
+.form-group select.is-valid,
+.form-group textarea.is-valid {
+    border-color: var(--fresh-green);
+}
+
+.form-group input.is-error,
+.form-group select.is-error,
+.form-group textarea.is-error {
+    border-color: #dc3545;
+}
+
 /* Scroll Animations */
 @keyframes fadeIn {
     from {
@@ -1757,6 +1840,7 @@ a:focus, button:focus, input:focus, select:focus, textarea:focus {
     -webkit-backdrop-filter: blur(20px);
     border: 2px solid rgba(107, 159, 62, 0.2);
     animation: badgePulse 2s ease-in-out infinite;
+    will-change: transform;
 }
 
 @keyframes badgePulse {
@@ -2045,6 +2129,7 @@ body {
     color: var(--pure-white);
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     animation: iconFloat 3s ease-in-out infinite;
+    will-change: transform;
 }
 
 @keyframes iconFloat {
