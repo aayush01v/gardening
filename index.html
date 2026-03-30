@@ -19,16 +19,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body id="top">
     <!-- Skip to main content for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
-            <div class="nav-brand">
+            <a href="#top" class="nav-brand" aria-label="GreenScape home">
                 <i class="fas fa-leaf"></i>
                 <span>GreenScape</span>
-            </div>
+            </a>
             <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
                 <span></span>
                 <span></span>
@@ -413,7 +413,7 @@
                             <span>Request Free Quote</span>
                             <i class="fas fa-paper-plane"></i>
                         </button>
-                        <div id="formMessage" class="form-message"></div>
+                        <div id="formMessage" class="form-message" role="status" aria-live="polite"></div>
                     </form>
                 </div>
             </div>
