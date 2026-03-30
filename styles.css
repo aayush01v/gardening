@@ -42,6 +42,7 @@
     --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
     --shadow-xl: 0 16px 48px rgba(0,0,0,0.2);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --hero-parallax-y: 0px;
 }
 
 body {
@@ -247,6 +248,11 @@ h3 {
     border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
+.navbar.navbar-scrolled {
+    padding: 0.8rem 0;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+
 .navbar .container {
     display: flex;
     justify-content: space-between;
@@ -344,8 +350,8 @@ h3 {
     background: linear-gradient(135deg, rgba(45, 80, 22, 0.85) 0%, rgba(107, 159, 62, 0.75) 100%),
                 url('https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1920&h=1080&fit=crop');
     background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-position: center calc(50% + var(--hero-parallax-y));
+    background-attachment: scroll;
     color: var(--pure-white);
     text-align: center;
     overflow: hidden;
@@ -627,6 +633,8 @@ h3 {
     padding: clamp(60px, 10vw, 120px) 0;
     background: var(--pure-white);
     position: relative;
+    content-visibility: auto;
+    contain-intrinsic-size: 1000px;
 }
 
 .services-grid {
@@ -767,6 +775,8 @@ h3 {
     padding: clamp(60px, 10vw, 120px) 0;
     background: linear-gradient(180deg, var(--cream-white) 0%, var(--pure-white) 100%);
     position: relative;
+    content-visibility: auto;
+    contain-intrinsic-size: 1000px;
 }
 
 .testimonials-grid {
@@ -861,6 +871,8 @@ h3 {
 .contact {
     padding: clamp(60px, 10vw, 120px) 0;
     background: var(--pure-white);
+    content-visibility: auto;
+    contain-intrinsic-size: 1000px;
 }
 
 .contact-grid {
@@ -1129,7 +1141,7 @@ h3 {
         url('https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=1920&h=600&fit=crop');
     background-size: cover;
     background-position: center;
-    background-attachment: fixed;
+    background-attachment: scroll;
     color: var(--pure-white);
     text-align: center;
     position: relative;
@@ -1511,6 +1523,17 @@ a:focus, button:focus, input:focus, select:focus, textarea:focus {
     animation: fadeIn 0.8s ease-out;
 }
 
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* Loading State */
 .btn:disabled {
     opacity: 0.6;
@@ -1697,6 +1720,45 @@ a:focus, button:focus, input:focus, select:focus, textarea:focus {
     width: 100px;
     height: 4px;
     background: linear-gradient(90deg, transparent, var(--fresh-green), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .hero,
+    .footer-cta {
+        background-position: center;
+    }
+
+    .reveal-on-scroll,
+    .reveal-on-scroll.is-visible {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (max-width: 1024px) {
+    .hero,
+    .footer-cta {
+        background-attachment: scroll;
+    }
+
+    .hero::after,
+    .hero::before,
+    .footer-cta::before,
+    .footer-cta::after {
+        animation-duration: 30s;
+    }
 }
 
 /* Premium Effects */
