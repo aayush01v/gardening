@@ -1,26 +1,23 @@
-// Mobile Navigation Toggle with Focus Trap
-const navToggle = document.querySelector('.nav-toggle');
-const navMenu = document.querySelector('.nav-menu');
-const navbar = document.querySelector('.navbar');
+// ── Cached DOM references ────────────────────────────────────
+const navToggle  = document.querySelector('.nav-toggle');
+const navMenu    = document.querySelector('.nav-menu');
+const navbar     = document.querySelector('.navbar');
+const hero       = document.querySelector('.hero');
 
+// ── Mobile Navigation Toggle ─────────────────────────────────
 navToggle.addEventListener('click', () => {
     const isOpen = navMenu.classList.toggle('active');
     navToggle.classList.toggle('active');
-    
-    // Prevent body scroll when menu is open
     document.body.style.overflow = isOpen ? 'hidden' : '';
-    
-    // Set aria-expanded for accessibility
     navToggle.setAttribute('aria-expanded', isOpen);
-    
-    // Focus first menu item when opening
+
     if (isOpen) {
         const firstLink = navMenu.querySelector('a');
         if (firstLink) firstLink.focus();
     }
 });
 
-// Close mobile menu when clicking on a link
+// Close mobile menu when clicking a nav link
 document.querySelectorAll('.nav-menu a').forEach(link => {
     link.addEventListener('click', () => {
         navMenu.classList.remove('active');
@@ -30,7 +27,7 @@ document.querySelectorAll('.nav-menu a').forEach(link => {
     });
 });
 
-// Close menu on escape key
+// Close menu on Escape key
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && navMenu.classList.contains('active')) {
         navMenu.classList.remove('active');
@@ -41,172 +38,80 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Navbar scroll effect
-let lastScroll = 0;
-window.addEventListener('scroll', () => {
-    const currentScroll = window.pageYOffset;
-    
-    if (currentScroll > 100) {
-        navbar.style.padding = '0.8rem 0';
-        navbar.style.boxShadow = '0 4px 24px rgba(0,0,0,0.12)';
-    } else {
-        navbar.style.padding = '1.2rem 0';
-        navbar.style.boxShadow = '0 2px 20px rgba(0,0,0,0.08)';
+// ── Single rAF-throttled, passive scroll handler ──────────────
+// Fix: replaces two separate unthrottled scroll listeners.
+// passive:true tells the browser we'll never call preventDefault(),
+// which lets it skip the main-thread check on every scroll tick.
+let ticking = false;
+
+const onScroll = () => {
+    const scrolled = window.scrollY;
+
+    // Navbar compact state — class toggle only (CSS handles the transition).
+    // No inline padding/boxShadow mutations → no layout reflow per frame.
+    navbar.classList.toggle('scrolled', scrolled > 100);
+
+    // Hero parallax — backgroundPositionY is cheaper than fixed-attachment
+    // repaints. Only runs while hero is in viewport.
+    if (hero && scrolled < window.innerHeight) {
+        hero.style.backgroundPositionY = `${scrolled * 0.4}px`;
     }
-    
-    lastScroll = currentScroll;
-});
 
-// Contact Form Handling
-const contactForm = document.getElementById('contactForm');
-const formMessage = document.getElementById('formMessage');
-const submitButton = contactForm.querySelector('button[type="submit"]');
-
-contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    // Add loading state
-    submitButton.classList.add('loading');
-    submitButton.disabled = true;
-    
-    // Get form data
-    const formData = new FormData(contactForm);
-    const data = Object.fromEntries(formData);
-    
-    // Simulate form submission (replace with actual backend endpoint)
-    setTimeout(() => {
-        console.log('Form submitted:', data);
-        
-        // Remove loading state
-        submitButton.classList.remove('loading');
-        submitButton.disabled = false;
-        
-        // Show success message
-        formMessage.textContent = 'Thank you! We\'ll contact you within 24 hours with your free quote.';
-        formMessage.className = 'form-message success';
-        
-        // Reset form
-        contactForm.reset();
-        
-        // Hide message after 5 seconds
-        setTimeout(() => {
-            formMessage.style.display = 'none';
-        }, 5000);
-    }, 1500);
-    
-    // In production, replace above with actual API call:
-    /*
-    fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        submitButton.classList.remove('loading');
-        submitButton.disabled = false;
-        formMessage.textContent = 'Thank you! We\'ll contact you within 24 hours.';
-        formMessage.className = 'form-message success';
-        contactForm.reset();
-    })
-    .catch(error => {
-        submitButton.classList.remove('loading');
-        submitButton.disabled = false;
-        formMessage.textContent = 'Something went wrong. Please try again or call us directly.';
-        formMessage.className = 'form-message error';
-    });
-    */
-});
-
-// Smooth scroll for anchor links (backup for browsers without CSS scroll-behavior)
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
-
-// Intersection Observer for scroll animations
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -100px 0px'
+    ticking = false;
 };
 
-const observer = new IntersectionObserver((entries) => {
+window.addEventListener('scroll', () => {
+    if (!ticking) {
+        requestAnimationFrame(onScroll);
+        ticking = true;
+    }
+}, { passive: true });
+
+// ── Scroll-reveal IntersectionObserver ───────────────────────
+// Fix: initial opacity/transform/transition are declared in CSS (.service-card etc.)
+// JS only toggles .is-visible — no inline style mutations, no transition override.
+const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
+            entry.target.classList.add('is-visible');
+            revealObserver.unobserve(entry.target); // stop watching once revealed
         }
     });
-}, observerOptions);
+}, {
+    threshold: 0.1,
+    rootMargin: '0px 0px -80px 0px'
+});
 
-// Observe all sections and cards
 document.addEventListener('DOMContentLoaded', () => {
-    const animatedElements = document.querySelectorAll('.service-card, .testimonial-card, .about-content, .about-image, .contact-info, .contact-form-wrapper');
-    
-    animatedElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-        observer.observe(el);
-    });
+    document.querySelectorAll(
+        '.service-card, .testimonial-card, .about-content, .about-image, .contact-info, .contact-form-wrapper'
+    ).forEach(el => revealObserver.observe(el));
 });
 
-// Form validation enhancement
-const inputs = document.querySelectorAll('.form-group input, .form-group select, .form-group textarea');
-inputs.forEach(input => {
-    input.addEventListener('blur', () => {
-        if (input.value.trim() !== '' && input.checkValidity()) {
-            input.style.borderColor = 'var(--fresh-green)';
-        } else if (input.value.trim() !== '' && !input.checkValidity()) {
-            input.style.borderColor = '#dc3545';
-        } else {
-            input.style.borderColor = 'var(--light-gray)';
-        }
-    });
-    
-    input.addEventListener('focus', () => {
-        input.style.borderColor = 'var(--fresh-green)';
-    });
-});
-
-
-// Animated counter for stats
+// ── Animated stat counters ────────────────────────────────────
 const animateCounter = (element) => {
-    const target = parseInt(element.getAttribute('data-target'));
-    const duration = 2000;
+    const target    = parseInt(element.getAttribute('data-target'), 10);
+    const duration  = 2000;
     const increment = target / (duration / 16);
-    let current = 0;
-    
-    const updateCounter = () => {
+    let current     = 0;
+
+    const tick = () => {
         current += increment;
         if (current < target) {
             element.textContent = Math.floor(current);
-            requestAnimationFrame(updateCounter);
+            requestAnimationFrame(tick);
         } else {
             element.textContent = target;
         }
     };
-    
-    updateCounter();
+
+    requestAnimationFrame(tick);
 };
 
-// Observe stats section
 const statsObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
-            const statNumbers = entry.target.querySelectorAll('.stat-number');
-            statNumbers.forEach(stat => {
+            entry.target.querySelectorAll('.stat-number').forEach(stat => {
                 if (!stat.classList.contains('counted')) {
                     animateCounter(stat);
                     stat.classList.add('counted');
@@ -219,23 +124,73 @@ const statsObserver = new IntersectionObserver((entries) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const statsBar = document.querySelector('.stats-bar');
-    if (statsBar) {
-        statsObserver.observe(statsBar);
-    }
+    if (statsBar) statsObserver.observe(statsBar);
 });
 
-// Parallax effect for hero
-window.addEventListener('scroll', () => {
-    const scrolled = window.pageYOffset;
-    const hero = document.querySelector('.hero');
-    if (hero && scrolled < window.innerHeight) {
-        hero.style.backgroundPositionY = scrolled * 0.5 + 'px';
-    }
+// ── Contact Form ──────────────────────────────────────────────
+const contactForm  = document.getElementById('contactForm');
+const formMessage  = document.getElementById('formMessage');
+const submitButton = contactForm.querySelector('button[type="submit"]');
+
+contactForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    submitButton.classList.add('loading');
+    submitButton.disabled = true;
+
+    const data = Object.fromEntries(new FormData(contactForm));
+
+    // Simulate submission — replace with real fetch() call in production
+    setTimeout(() => {
+        console.log('Form submitted:', data);
+
+        submitButton.classList.remove('loading');
+        submitButton.disabled = false;
+
+        formMessage.textContent = "Thank you! We'll contact you within 24 hours with your free quote.";
+        formMessage.className   = 'form-message success';
+        contactForm.reset();
+
+        // Clear all validation classes on reset
+        contactForm.querySelectorAll('input, select, textarea').forEach(field => {
+            field.classList.remove('is-valid', 'is-error');
+        });
+
+        setTimeout(() => { formMessage.style.display = 'none'; }, 5000);
+    }, 1500);
 });
 
-// Add smooth hover effect to all links
-document.querySelectorAll('a').forEach(link => {
-    link.addEventListener('mouseenter', function() {
-        this.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+// ── Form field validation — class-based (no inline style.borderColor) ──
+// Fix: was mutating input.style.borderColor on every blur/focus,
+// causing paint invalidation on each field interaction.
+const formFields = document.querySelectorAll('.form-group input, .form-group select, .form-group textarea');
+
+formFields.forEach(field => {
+    field.addEventListener('blur', () => {
+        const filled = field.value.trim() !== '';
+        field.classList.toggle('is-valid',  filled && field.checkValidity());
+        field.classList.toggle('is-error',  filled && !field.checkValidity());
+        if (!filled) field.classList.remove('is-valid', 'is-error');
+    });
+
+    field.addEventListener('focus', () => {
+        field.classList.remove('is-error');
+        if (field.value.trim()) field.classList.add('is-valid');
     });
 });
+
+// ── Smooth scroll for anchor links ───────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+
+// NOTE: The mouseenter transition-setter block from the original has been
+// removed. It was re-injecting `transition: all` on every link mouseenter,
+// overriding the more efficient scoped property transitions set in CSS and
+// adding a redundant event listener to every anchor on the page.
